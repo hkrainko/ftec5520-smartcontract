@@ -3,9 +3,9 @@ pragma solidity ^0.8.19;
 
 contract TravelInsuranceFactory {
     address public manager; // our company's wallet address
-    address[] public deployedInsurances;
+    address[] public deployedInsurances; // list of deployed insurance contracts
     mapping(string => InsuranceTemplate) insuranceTemplates; // name => InsuranceTemplate
-    string[] public insuranceTemplateNames;
+    string[] public insuranceTemplateNames; // list of insurance template names
 
     struct InsuranceTemplate {
         string name;
@@ -84,15 +84,15 @@ contract TravelInsuranceFactory {
 
 
 contract TravelInsurance {
-    string public templateName;
+    string public templateName; // name of the insurance template
     address public insurer; // our company's wallet address
     address public insured; // the person who buys the insurance
-    uint256 public tripStart;
-    uint256 public tripEnd;
+    uint256 public tripStart; // timestamp of the start of the trip
+    uint256 public tripEnd; // timestamp of the end of the trip
     uint256 public premium; // price of the insurance
     uint256 public payoutAmount; // amount to be paid out to the purchaser once claimed
-    bool public isActive;
-    bool public isPaidOut;
+    bool public isActive; // whether the insurance is active
+    bool public isPaidOut; // whether the insurance has been paid out
 
     constructor(
         string memory _templateName,
