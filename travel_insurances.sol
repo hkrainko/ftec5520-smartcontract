@@ -4,39 +4,87 @@ pragma solidity ^0.8.19;
 contract TravelInsuranceFactory {
     address public manager; // our company's wallet address
     address[] public deployedInsurances;
+    mapping(string => InsuranceTemplate) insuranceTemplates; // name => InsuranceTemplate
+    string[] public insuranceTemplateNames;
+
+    struct InsuranceTemplate {
+        string name;
+        uint256 premium;
+        uint256 payoutAmount;
+    }
 
     constructor() {
         manager = msg.sender;
+    }
+
+    function createInsuranceTemplate(
+        string memory _name,
+        uint256 _premium,
+        uint256 _payoutAmount
+        ) public onlyManager {
+        InsuranceTemplate memory newTemplate = InsuranceTemplate({
+            name: _name,
+            premium: _premium,
+            payoutAmount: _payoutAmount
+        });
+        insuranceTemplates[_name] = newTemplate;
+        insuranceTemplateNames.push(_name);
     }
 
     function createTravelInsurance(
         address _insured,
         uint256 _tripStart,
         uint256 _tripEnd,
-        uint256 _premium,
-        uint256 _payoutAmount
+        string memory _templateName
         ) public {
         // create new contract
         // add to deployedInsurance
 
+        InsuranceTemplate memory template = insuranceTemplates[_templateName];
+        require(template.premium > 0, "Template does not exist"); // template must exist
+
         TravelInsurance newInsurance = new TravelInsurance(
+            template.name,
             manager,
             _insured,
             _tripStart,
             _tripEnd,
-            _premium,
-            _payoutAmount
+            template.premium,
+            template.payoutAmount
         );
-        deployedInsurances.push(newInsurance);
+        deployedInsurances.push(address(newInsurance));
     }
 
-    function getDeployedInsurance() public view returns (address[] memory) {
+    function getDeployedInsurances() public view returns (address[] memory) {
         return deployedInsurances;
+    }
+
+    function getInsuranceTemplateNames() public view returns (string[] memory) {
+        return insuranceTemplateNames;
+    }
+
+    function getInsuranceTemplate(string memory _name) public view returns (
+        string memory _templateName,
+        uint256 _premium,
+        uint256 _payoutAmount
+    ) {
+        InsuranceTemplate memory template = insuranceTemplates[_name];
+        return (
+            template.name,
+            template.premium,
+            template.payoutAmount
+        );
+    }
+
+    modifier onlyManager() {
+        require(msg.sender == manager);
+        _;
     }
 }
 
 
 contract TravelInsurance {
+    string public templateName;
     address public insurer; // our company's wallet address
     address public insured; // the person who buys the insurance
     uint256 public tripStart;
@@ -47,6 +95,7 @@ contract TravelInsurance {
     bool public isPaidOut;
 
     constructor(
+        string memory _templateName,
         address _insurer,
         address _insured,
         uint256 _tripStart,
@@ -54,6 +103,7 @@ contract TravelInsurance {
         uint256 _premium,
         uint256 _payoutAmount
         ) {
+        templateName = _templateName;
         insurer = _insurer;
         insured = _insured;
         tripStart = _tripStart;
@@ -79,7 +129,7 @@ contract TravelInsurance {
         require(block.timestamp < tripEnd); // can only claim before the trip ends
         require(!isPaidOut); // can only claim once
 
-        payable(purchaser).transfer(payoutAmount);
+        payable(insured).transfer(payoutAmount);
         isPaidOut = true;
     }
 
