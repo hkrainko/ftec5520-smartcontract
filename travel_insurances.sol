@@ -22,6 +22,7 @@ contract TravelInsuranceFactory {
         uint256 _premium,
         uint256 _payoutAmount
         ) public onlyManager {
+
         InsuranceTemplate memory newTemplate = InsuranceTemplate({
             name: _name,
             premium: _premium,
@@ -32,21 +33,23 @@ contract TravelInsuranceFactory {
     }
 
     function createTravelInsurance(
-        address _insured,
         uint256 _tripStart,
         uint256 _tripEnd,
         string memory _templateName
-        ) public {
+        ) public payable {
         // create new contract
         // add to deployedInsurance
 
         InsuranceTemplate memory template = insuranceTemplates[_templateName];
         require(template.premium > 0, "Template does not exist"); // template must exist
 
+        require(msg.value == template.premium, "Insured must pay the premium");
+        payable(manager).transfer(template.premium);
+
         TravelInsurance newInsurance = new TravelInsurance(
             template.name,
             manager,
-            _insured,
+            msg.sender,
             _tripStart,
             _tripEnd,
             template.premium,
@@ -110,14 +113,14 @@ contract TravelInsurance {
         tripEnd = _tripEnd;
         premium = _premium;
         payoutAmount = _payoutAmount;
-        isActive = false;
+        isActive = true;
         isPaidOut = false;
     }
 
-    function payPremium() public payable {
-        require(msg.value == premium); // Pay the premium of the insurance
-        isActive = true; // onle when the premium is paid, the insurance is active
-    }
+    // function payPremium() public payable {
+    //     require(msg.value == premium); // Pay the premium of the insurance
+    //     isActive = true; // onle when the premium is paid, the insurance is active
+    // }
 
     function cancelInsurance() public onlyInsurer {
         isActive = false;
