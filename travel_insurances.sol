@@ -122,11 +122,12 @@ contract TravelInsurance {
     //     isActive = true; // onle when the premium is paid, the insurance is active
     // }
 
-    function cancelInsurance() public onlyInsurer {
+    function cancelInsurance() public onlyInsurer payable {
+        payable(insured).transfer(premium); // refund the premium to the insured
         isActive = false;
     }
 
-    function claimInsurance() public onlyInsurer {
+    function claimInsurance() public onlyInsurer payable {
         require(isActive); // can only claim when the insurance is active
         require(block.timestamp >= tripStart); // can only claim after the trip starts
         require(block.timestamp < tripEnd); // can only claim before the trip ends
