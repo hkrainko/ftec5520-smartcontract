@@ -34,7 +34,7 @@ contract TravelInsuranceFactory {
     }
 
     function createTravelInsurance(
-        string memory _templateName, // name of the insurance template, flight number + departure time (e.g. SQ123_202101011200)
+        string memory _templateName,
         string memory _flightNumber, // flight number (e.g. SQ123)
         string memory _departureTime // unix timestamp (e.g. 1678621644)
         ) public payable {
@@ -47,6 +47,7 @@ contract TravelInsuranceFactory {
         require(msg.value == template.premium, "Insured must pay the premium");
         payable(manager).transfer(template.premium);
 
+        //SQ123_1678621644
         TravelInsurance newInsurance = new TravelInsurance(
             template.name,
             _flightNumber,
