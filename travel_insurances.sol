@@ -4,13 +4,14 @@ pragma solidity ^0.8.19;
 contract TravelInsuranceFactory {
     address public manager; // our company's wallet address
     address[] public deployedInsurances; // list of deployed insurance contracts
+    mapping(string => address[]) deployedInsuranceMap; // flight uid => insurance contract addresses, uid = flight number + '_' + departure time (e.g. SQ123_1678621644)
     mapping(string => InsuranceTemplate) insuranceTemplates; // name => InsuranceTemplate
     string[] public insuranceTemplateNames; // list of insurance template names
 
     struct InsuranceTemplate {
-        string name;
-        uint256 premium;
-        uint256 payoutAmount;
+        string name; // name of the insurance template
+        uint256 premium; // price of the insurance
+        uint256 payoutAmount; // amount to be paid out to the purchaser once claimed
     }
 
     constructor() {
@@ -33,9 +34,9 @@ contract TravelInsuranceFactory {
     }
 
     function createTravelInsurance(
-        uint256 _tripStart,
-        uint256 _tripEnd,
-        string memory _templateName
+        string memory _templateName, // name of the insurance template, flight number + departure time (e.g. SQ123_202101011200)
+        string memory _flightNumber, // flight number (e.g. SQ123)
+        string memory _departureTime // unix timestamp (e.g. 1678621644)
         ) public payable {
         // create new contract
         // add to deployedInsurance
@@ -48,14 +49,16 @@ contract TravelInsuranceFactory {
 
         TravelInsurance newInsurance = new TravelInsurance(
             template.name,
+            _flightNumber,
+            _departureTime,
             manager,
             msg.sender,
-            _tripStart,
-            _tripEnd,
             template.premium,
             template.payoutAmount
         );
+        string memory flightUid = getFlightUid(_flightNumber, _departureTime);
         deployedInsurances.push(address(newInsurance));
+        deployedInsuranceMap[flightUid].push(address(newInsurance));
     }
 
     function getDeployedInsurances() public view returns (address[] memory) {
@@ -83,15 +86,22 @@ contract TravelInsuranceFactory {
         require(msg.sender == manager);
         _;
     }
+
+    function getFlightUid(string memory a, string memory b) private pure returns (string memory) {
+        bytes memory bytesA = bytes(a);
+        bytes memory bytesB = bytes(b);
+        bytes memory result = abi.encodePacked(bytesA, bytes("_"), bytesB);
+        return string(result);
+    }
 }
 
 
 contract TravelInsurance {
     string public templateName; // name of the insurance template
+    string public flightNumber; // flight number (e.g. SQ123)
+    string public departureTime; // unix timestamp (e.g. 1678621644)
     address public insurer; // our company's wallet address
     address public insured; // the person who buys the insurance
-    uint256 public tripStart; // timestamp of the start of the trip
-    uint256 public tripEnd; // timestamp of the end of the trip
     uint256 public premium; // price of the insurance
     uint256 public payoutAmount; // amount to be paid out to the purchaser once claimed
     bool public isActive; // whether the insurance is active
@@ -99,18 +109,18 @@ contract TravelInsurance {
 
     constructor(
         string memory _templateName,
+        string memory _flightNumber, // flight number (e.g. SQ123)
+        string memory _departureTime, // unix timestamp (e.g. 1678621644)
         address _insurer,
         address _insured,
-        uint256 _tripStart,
-        uint256 _tripEnd,
         uint256 _premium,
         uint256 _payoutAmount
         ) {
         templateName = _templateName;
+        flightNumber = _flightNumber;
+        departureTime = _departureTime;
         insurer = _insurer;
         insured = _insured;
-        tripStart = _tripStart;
-        tripEnd = _tripEnd;
         premium = _premium;
         payoutAmount = _payoutAmount;
         isActive = true;
@@ -129,8 +139,6 @@ contract TravelInsurance {
 
     function claimInsurance() public onlyInsurer payable {
         require(isActive); // can only claim when the insurance is active
-        require(block.timestamp >= tripStart); // can only claim after the trip starts
-        require(block.timestamp < tripEnd); // can only claim before the trip ends
         require(!isPaidOut); // can only claim once
 
         payable(insured).transfer(payoutAmount);
@@ -145,8 +153,6 @@ contract TravelInsurance {
     function getDetails() public view returns (
         address _insurer,
         address _insured,
-        uint256 _tripStart,
-        uint256 _tripEnd,
         uint256 _premium,
         uint256 _payoutAmount,
         bool _isActive,
@@ -155,8 +161,6 @@ contract TravelInsurance {
         return (
             insurer,
             insured,
-            tripStart,
-            tripEnd,
             premium,
             payoutAmount,
             isActive,
