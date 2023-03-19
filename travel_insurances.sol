@@ -71,8 +71,10 @@ contract TravelInsuranceFactory {
         deployedInsuranceByInsuredAddress[msg.sender].push(address(newInsurance));
     }
 
-    function getDeployedInsurances() public onlyManager view returns (address[] memory) {
-        return deployedInsurances;
+    function getDeployedInsurances() public view returns (address[] memory) {
+        address[] memory senders = new address[](1);
+        senders[0] = msg.sender;
+        return senders;
     }
 
     function getMyInsurances() public view returns (TravelInsurance.TravelInsuranceData[] memory) {
