@@ -19,6 +19,8 @@ contract TravelInsuranceFactory {
         uint256 payoutAmount; // amount to be paid out to the purchaser once claimed
     }
 
+    event InsuranceClaimed(address indexed _address, address indexed _insured, uint256 _payoutAmount);
+
     constructor() {
         manager = msg.sender;
     }
@@ -90,6 +92,17 @@ contract TravelInsuranceFactory {
         return insuranceTemplates;
     }
 
+    function claimInsurance(string memory fightUid) public onlyManager payable {
+        address[] memory insurances = deployedInsuranceMap[fightUid];
+        for (uint256 i = 0; i < insurances.length; i++) {
+            TravelInsurance insurance = TravelInsurance(insurances[i]);
+            if (insurance.getIsActive() && !insurance.getIsPaidOut()) {
+                insurance.claimInsurance();
+                emit InsuranceClaimed(address(insurance), insurance.getInsured(), insurance.getPayoutAmount());
+            }
+        }
+    }
+
     modifier onlyManager() {
         require(msg.sender == manager);
         _;
@@ -143,11 +156,6 @@ contract TravelInsurance {
         data.isPaidOut = false;
     }
 
-    // function payPremium() public payable {
-    //     require(msg.value == premium); // Pay the premium of the insurance
-    //     isActive = true; // onle when the premium is paid, the insurance is active
-    // }
-
     function cancelInsurance() public onlyInsurer payable {
         payable(data.insured).transfer(data.premium); // refund the premium to the insured
         data.isActive = false;
@@ -159,6 +167,22 @@ contract TravelInsurance {
 
         payable(data.insured).transfer(data.payoutAmount);
         data.isPaidOut = true;
+    }
+
+    function getIsActive() public view returns (bool) {
+        return data.isActive;
+    }
+
+    function getIsPaidOut() public view returns (bool) {
+        return data.isPaidOut;
+    }
+
+    function getInsured() public view returns (address) {
+        return data.insured;
+    }
+
+    function getPayoutAmount() public view returns (uint256) {
+        return data.payoutAmount;
     }
 
     modifier onlyInsurer() {
