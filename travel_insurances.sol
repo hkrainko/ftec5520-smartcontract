@@ -75,6 +75,11 @@ contract TravelInsuranceFactory {
         return deployedInsurances;
     }
 
+    function getDeployedInsurancesByFlight(string memory _flightNumber, string memory _departureTime) public view returns (address[] memory) {
+        string memory flightUid = getFlightUid(_flightNumber, _departureTime);
+        return deployedInsuranceMap[flightUid];
+    }
+
     function getMyInsurances() public view returns (TravelInsurance.TravelInsuranceData[] memory) {
         TravelInsurance.TravelInsuranceData[] memory myInsurances = new TravelInsurance.TravelInsuranceData[](deployedInsuranceByInsuredAddress[msg.sender].length);
         for (uint256 i = 0; i < deployedInsuranceByInsuredAddress[msg.sender].length; i++) {
