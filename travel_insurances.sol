@@ -111,6 +111,8 @@ contract TravelInsurance {
 
     TravelInsuranceData public data;
 
+    event ClaimEvent(address indexed from, TravelInsurance.TravelInsuranceData data);
+
     struct TravelInsuranceData {
         uint256 templateId; // id of the insurance template
         string templateName; // name of the insurance template
@@ -162,6 +164,8 @@ contract TravelInsurance {
 
         payable(data.insured).transfer(data.payoutAmount);
         data.isPaidOut = true;
+
+        emit ClaimEvent(msg.sender, data);
     }
 
     modifier onlyInsurer() {
