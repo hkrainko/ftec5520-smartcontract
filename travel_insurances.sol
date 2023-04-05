@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.17;
 
 contract TravelInsuranceFactory {
     address public manager; // our company's wallet address
