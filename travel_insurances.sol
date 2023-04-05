@@ -19,6 +19,11 @@ contract TravelInsuranceFactory {
         uint256 payoutAmount; // amount to be paid out to the purchaser once claimed
     }
 
+    struct MyInsurances {
+        TravelInsurance.TravelInsuranceData[] insurances;
+        address[] addresses;
+    }
+
     constructor() {
         manager = msg.sender;
     }
@@ -80,13 +85,14 @@ contract TravelInsuranceFactory {
         return deployedInsuranceMap[flightUid];
     }
 
-    function getMyInsurances() public view returns (TravelInsurance.TravelInsuranceData[] memory) {
+    function getMyInsurances() public view returns (MyInsurances memory) {
         TravelInsurance.TravelInsuranceData[] memory myInsurances = new TravelInsurance.TravelInsuranceData[](deployedInsuranceByInsuredAddress[msg.sender].length);
         for (uint256 i = 0; i < deployedInsuranceByInsuredAddress[msg.sender].length; i++) {
             TravelInsurance.TravelInsuranceData memory insuranceData = TravelInsurance(deployedInsuranceByInsuredAddress[msg.sender][i]).getData();
             myInsurances[i] = insuranceData;
         }
-        return myInsurances;
+        address[] memory addresses = deployedInsuranceByInsuredAddress[msg.sender];
+        return MyInsurances(myInsurances, addresses);
     }
 
     function getInsuranceTemplates() public view returns (InsuranceTemplate[] memory) {
